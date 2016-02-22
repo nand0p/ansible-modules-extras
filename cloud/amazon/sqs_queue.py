@@ -61,6 +61,11 @@ options:
       - The receive message wait time in seconds.
     required: false
     default: null
+  policy:
+    description:
+      - The policy document to attach to queue
+    required: false
+    default: null
 extends_documentation_fragment:
     - aws
     - ec2
@@ -76,6 +81,7 @@ EXAMPLES = '''
     maximum_message_size: 1024
     delivery_delay: 30
     receive_message_wait_time: 20
+    policy: policy_document.json
 
 # Delete SQS queue
 - sqs_queue:
@@ -102,6 +108,7 @@ def create_or_update_sqs_queue(connection, module):
         maximum_message_size=module.params.get('maximum_message_size'),
         delivery_delay=module.params.get('delivery_delay'),
         receive_message_wait_time=module.params.get('receive_message_wait_time'),
+        policy=module.params.get('policy'),
     )
 
     result = dict(
@@ -136,7 +143,8 @@ def update_sqs_queue(queue,
                      message_retention_period=None,
                      maximum_message_size=None,
                      delivery_delay=None,
-                     receive_message_wait_time=None):
+                     receive_message_wait_time=None,
+                     policy=None):
     changed = False
 
     changed = set_queue_attribute(queue, 'VisibilityTimeout', default_visibility_timeout,
@@ -149,6 +157,8 @@ def update_sqs_queue(queue,
                                   check_mode=check_mode) or changed
     changed = set_queue_attribute(queue, 'ReceiveMessageWaitTimeSeconds', receive_message_wait_time,
                                   check_mode=check_mode) or changed
+    changed = set_queue_attribute(queue, 'Policy', policy,
+                                  check_mode=check_mode) or changed
     return changed
 
 
@@ -156,11 +166,16 @@ def set_queue_attribute(queue, attribute, value, check_mode=False):
     if not value:
         return False
 
-    existing_value = queue.get_attributes(attributes=attribute)[attribute]
-    if str(value) != existing_value:
-        if not check_mode:
-            queue.set_attribute(attribute, value)
-        return True
+    # SQS queue has no attribute 'Policy' until one is attached, so this special
+    # case must be handled uniquely
+    if attribute is not 'Policy':
+        existing_value = queue.get_attributes(attributes=attribute)[attribute]
+        if str(value) != existing_value:
+            if not check_mode:
+                queue.set_attribute(attribute, value)
+            return True
+    else:
+        queue.set_attribute('Policy',json.dumps(value))
 
     return False
 
@@ -200,6 +215,7 @@ def main():
         maximum_message_size=dict(type='int'),
         delivery_delay=dict(type='int'),
         receive_message_wait_time=dict(type='int'),
+        policy=dict(type='dict', required=False),
     ))
 
     module = AnsibleModule(
