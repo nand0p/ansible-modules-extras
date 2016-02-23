@@ -63,7 +63,7 @@ options:
     default: null
   policy:
     description:
-      - The policy document to attach to queue
+      - The json dict policy to attach to queue
     required: false
     default: null
     version_added: "2.1"
@@ -82,7 +82,7 @@ EXAMPLES = '''
     maximum_message_size: 1024
     delivery_delay: 30
     receive_message_wait_time: 20
-    policy: policy_document.json
+    policy: "{{ json_dict }}"
 
 # Delete SQS queue
 - sqs_queue:
