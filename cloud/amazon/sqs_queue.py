@@ -167,16 +167,18 @@ def set_queue_attribute(queue, attribute, value, check_mode=False):
     if not value:
         return False
 
-    # SQS queue has no attribute 'Policy' until one is attached, so this special
-    # case must be handled uniquely
-    if attribute is not 'Policy':
+    try:
         existing_value = queue.get_attributes(attributes=attribute)[attribute]
-        if str(value) != existing_value:
-            if not check_mode:
+    except:
+        existing_value = ''
+
+    if str(value) != existing_value:
+        if not check_mode:
+            if attribute is 'Policy':
+                queue.set_attribute(attribute, json.dumps(value))
+            else:
                 queue.set_attribute(attribute, value)
-            return True
-    else:
-        queue.set_attribute('Policy',json.dumps(value))
+        return True
 
     return False
 
