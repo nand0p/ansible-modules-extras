@@ -66,6 +66,7 @@ options:
       - The policy document to attach to queue
     required: false
     default: null
+    version_added: "2.1"
 extends_documentation_fragment:
     - aws
     - ec2
