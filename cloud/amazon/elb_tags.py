@@ -1,37 +1,51 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# This is a free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This Ansible library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this library.  If not, see <http://www.gnu.org/licenses/>.
+
 
 DOCUMENTATION = '''
----
 module: elb_tags
-short_description: allows manipulation of elb tags
+short_description: allows manipulation of ELB tags
+description:
+    - Module allows for adding and removing tags from ELBs
+version_added: 2.1
+author: "Fernando Jose Pando (@oldmanlinux)"
 options:
-
   elb_name:
     description:
       - Name of the elb of which to modify tags
     required: true
     default: null
     aliases: []
-
   tags:
     description:
       - list of dictionaries of tags
     required: true
-
   state:
     description:
       - add or remove tags
     required: true
-
-
 extends_documentation_fragment: aws
+requirements: [ "boto3" ]
 '''
 
 EXAMPLES = '''
     # Adds elb tag
     elb_tag:
         elb_name: foo
-        tags: "{{ tags_dict }}"
+        tags: "{{ list_of_dicts }}"
         state: present
 '''
 
