@@ -82,7 +82,6 @@ def create_or_update_elb_tags(client, module, result):
     else:
         module.exit_json(**result)
 
-
 def delete_elb_tags(client, module, result):
     try:
         result['msg'] = client.remove_tags(
@@ -104,16 +103,10 @@ def main():
         elb_name = dict(type = "str", required = True),
         tags = dict(type = "list", required = True)
     ))
-
     module = AnsibleModule(
         argument_spec = argument_spec,
         supports_check_mode = False
     )
-
-    if not HAS_BOTO3:
-        module.fail_json(msg = 'boto3 required for this module')
-
-    client = boto3.client('elb')
     state = module.params.get('state')
     result = dict(
         elb_name = module.params.get('elb_name'),
@@ -121,9 +114,13 @@ def main():
         region = module.params.get('region'),
         changed = False
     )
+    if not HAS_BOTO3:
+        result['msg'] = 'boto3 required for this module' + \
+                        traceback.format_exc()
+        module.fail_json(**result)
+    client = boto3.client('elb')
     result['existing'] = sorted(client.describe_tags(
         LoadBalancerNames = [result['elb_name']])['TagDescriptions'][0]['Tags'])
-
     if state == 'present':
         create_or_update_elb_tags(client, module, result)
     elif state == 'absent':
