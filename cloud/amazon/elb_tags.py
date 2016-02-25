@@ -52,6 +52,39 @@ EXAMPLES = '''
         state: present
 '''
 
+RETURN = '''
+changed:
+    description: Whether tags have been added or removed
+    type: bool
+    returned: changed
+    sample: True
+elb_name:
+    description: The name of elb that was changed
+    type: string
+    returned: state == "present" or state == "absent"
+    sample: "elb_name"
+existing:
+    description: list of dicts of existing tags
+    type: list
+    returned: state == "present" or state == "absent"
+    sample: [{ "Key": "Owner", "Value": "owner@example.com" }]
+msg:
+    description: response from AWS API
+    type: dict
+    returned: state == "present" or state == "absent"
+    sample: {"ResponseMetadata": {"HTTPStatusCode": 200, "RequestId": "01234567-0123-0123-0123-0123456789ab"}}
+region:
+    description: the region elb is in
+    type: string
+    returned: state == "present" or state == "absent"
+    sample: "us-east-1"
+tags:
+    description: the tags list of dicts that have been applied or removed
+    type: list
+    returned: state == "present" or state == "absent"
+    sample: [{ "Key": "Department", "Value": "Information Retrieval" }]
+'''
+
 try:
     import boto3
     import botocore
