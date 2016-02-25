@@ -20,25 +20,28 @@ module: elb_tags
 short_description: allows manipulation of ELB tags
 description:
     - Module allows for adding and removing tags from ELBs
+    - ELBs have no Resource-ID so ec2_tag will not work
 version_added: 2.1
 author: "Fernando Jose Pando (@oldmanlinux)"
+requirements: [ "boto3" ]
 options:
   elb_name:
     description:
       - Name of the elb of which to modify tags
     required: true
-    default: null
-    aliases: []
   tags:
     description:
-      - list of dictionaries of tags
+      - List of dictionaries of tags
     required: true
   state:
     description:
-      - add or remove tags
-    required: true
-extends_documentation_fragment: aws
-requirements: [ "boto3" ]
+      - Add or remove tags
+    required: false
+    choices: ['present', 'absent']
+    default: 'present'
+extends_documentation_fragment:
+  - aws
+  - ec2
 '''
 
 EXAMPLES = '''
@@ -97,18 +100,18 @@ def delete_elb_tags(client, module, result):
 def main():
     argument_spec = ec2_argument_spec()
     argument_spec.update(dict(
-        state = dict(default='present', choices=['present', 'absent']),
-        elb_name = dict(type="str", required = True),
-        tags = dict(type="list")
+        state = dict(default = 'present', choices = ['present', 'absent']),
+        elb_name = dict(type = "str", required = True),
+        tags = dict(type = "list", required = True)
     ))
 
     module = AnsibleModule(
         argument_spec = argument_spec,
-        supports_check_mode = True
+        supports_check_mode = False
     )
 
     if not HAS_BOTO3:
-        module.fail_json(msg='boto3 required for this module')
+        module.fail_json(msg = 'boto3 required for this module')
 
     client = boto3.client('elb')
     state = module.params.get('state')
