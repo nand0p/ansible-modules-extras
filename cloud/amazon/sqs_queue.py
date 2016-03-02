@@ -22,7 +22,9 @@ description:
   - Create or delete AWS SQS queues.
   - Update attributes on existing queues.
 version_added: "2.0"
-author: Alan Loi (@loia)
+author:
+  - Alan Loi (@loia)
+  - Fernando Jose Pando (@nand0p)
 requirements:
   - "boto >= 2.33.0"
 options:
