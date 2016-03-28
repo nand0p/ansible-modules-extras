@@ -174,12 +174,15 @@ def set_queue_attribute(queue, attribute, value, check_mode=False):
     except:
         existing_value = ''
 
+    # convert dict attributes to JSON strings (sort keys for comparing)
+    if attribute is 'Policy':
+        value = json.dumps(value, sort_keys=True)
+        if existing_value:
+            existing_value = json.dumps(json.loads(existing_value), sort_keys=True)
+
     if str(value) != existing_value:
         if not check_mode:
-            if attribute is 'Policy':
-                queue.set_attribute(attribute, json.dumps(value))
-            else:
-                queue.set_attribute(attribute, value)
+            queue.set_attribute(attribute, value)
         return True
 
     return False
