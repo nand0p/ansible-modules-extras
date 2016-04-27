@@ -76,6 +76,7 @@ EXAMPLES = '''
 
 try:
     import boto.ec2.elb
+    from boto.ec2.tag import Tag
     from boto.exception import BotoServerError
     HAS_BOTO = True
 except ImportError:
@@ -95,6 +96,19 @@ class ElbInformation(object):
         self.region = region
         self.aws_connect_params = aws_connect_params
         self.connection = self._get_elb_connection()
+
+    def _get_tags(self):
+        if len(self.names) == 1:
+           params = {'LoadBalancerNames.member.1': self.names[0]}
+           elb_tags = self.connection.get_list('DescribeTags', params, [('member', Tag)])
+           return dict((tag.Key, tag.Value) for tag in elb_tags if hasattr(tag, 'Key'))
+        else:
+           tags = []
+           for elb in self.names:
+               params = {'LoadBalancerNames.member.1': elb}
+               elb_tags = self.connection.get_list('DescribeTags', params, [('member', Tag)])
+               tags.append(dict((tag.Key, tag.Value) for tag in elb_tags if hasattr(tag, 'Key')))
+           return tags
 
     def _get_elb_connection(self):
         try:
@@ -147,8 +161,6 @@ class ElbInformation(object):
         return health_check_dict
 
     def _get_elb_info(self, elb):
-        print "ELB"
-        print elb
         elb_info = {
             'name': elb.name,
             'zones': elb.availability_zones,
@@ -168,6 +180,7 @@ class ElbInformation(object):
             'instances_outofservice': [],
             'instances_outofservice_count': 0,
             'instances_inservice_percent': 0.0,
+            'tags': self._get_tags()
         }
 
         if elb.vpc_id:
@@ -188,23 +201,17 @@ class ElbInformation(object):
         return elb_info
 
 
-    def _list_elbs(self):
+    def list_elbs(self):
         elb_array = []
+
         try:
             all_elbs = self.connection.get_all_load_balancers()
         except BotoServerError as err:
             self.module.fail_json(msg = "%s: %s" % (err.error_code, err.error_message))
 
         for existing_lb in all_elbs:
-            for lookup_lb in self.names:
-                if lookup_lb in str(existing_lb):
-                    try:
-                        this_lookup = self.connection.get_all_load_balancers(lookup_lb)[0]
-                    except BotoStandardError as err:
-                        self.module.fail_json(msg=err.message)
-
-                    elb_array.append(self._get_elb_info(this_lookup))
-                    #return self._get_elb_info(this_lookup)
+            if existing_lb.name in self.names:
+                elb_array.append(self._get_elb_info(existing_lb))
 
         return elb_array
 
@@ -231,7 +238,7 @@ def main():
                               **aws_connect_params)
 
     ec2_facts_result = dict(changed=False,
-                            elbs=elb_information._list_elbs())
+                            elbs=elb_information.list_elbs())
 
     module.exit_json(**ec2_facts_result)
 
