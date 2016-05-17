@@ -97,11 +97,6 @@ EXAMPLES = """
 """
 
 RETURN = '''
-changed:
-    description: set true if sns topic modified
-    type: bool
-    sample: false
-
 sns_arn:
     description: The ARN of the topic you are modifying
     type: string
