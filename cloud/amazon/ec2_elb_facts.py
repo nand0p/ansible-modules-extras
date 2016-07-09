@@ -97,18 +97,13 @@ class ElbInformation(object):
         self.aws_connect_params = aws_connect_params
         self.connection = self._get_elb_connection()
 
-    def _get_tags(self):
-        if len(self.names) == 1:
-           params = {'LoadBalancerNames.member.1': self.names[0]}
-           elb_tags = self.connection.get_list('DescribeTags', params, [('member', Tag)])
-           return dict((tag.Key, tag.Value) for tag in elb_tags if hasattr(tag, 'Key'))
-        else:
-           tags = []
-           for elb in self.names:
-               params = {'LoadBalancerNames.member.1': elb}
-               elb_tags = self.connection.get_list('DescribeTags', params, [('member', Tag)])
-               tags.append(dict((tag.Key, tag.Value) for tag in elb_tags if hasattr(tag, 'Key')))
-           return tags
+    def _get_tags(self, elbname):
+        params = {'LoadBalancerNames.member.1': elbname}
+        try:
+            elb_tags = self.connection.get_list('DescribeTags', params, [('member', Tag)])
+            return dict((tag.Key, tag.Value) for tag in elb_tags if hasattr(tag, 'Key'))
+        except:
+            return {}
 
     def _get_elb_connection(self):
         try:
@@ -167,8 +162,8 @@ class ElbInformation(object):
             'dns_name': elb.dns_name,
             'canonical_hosted_zone_name': elb.canonical_hosted_zone_name,
             'canonical_hosted_zone_name_id': elb.canonical_hosted_zone_name_id,
-        'hosted_zone_name': elb.canonical_hosted_zone_name,
-        'hosted_zone_id': elb.canonical_hosted_zone_name_id,
+            'hosted_zone_name': elb.canonical_hosted_zone_name,
+            'hosted_zone_id': elb.canonical_hosted_zone_name_id,
             'instances': [instance.id for instance in elb.instances],
             'listeners': self._get_elb_listeners(elb.listeners),
             'scheme': elb.scheme,
@@ -180,7 +175,7 @@ class ElbInformation(object):
             'instances_outofservice': [],
             'instances_outofservice_count': 0,
             'instances_inservice_percent': 0.0,
-            'tags': self._get_tags()
+            'tags': self._get_tags(elb.name)
         }
 
         if elb.vpc_id:
@@ -209,9 +204,10 @@ class ElbInformation(object):
         except BotoServerError as err:
             self.module.fail_json(msg = "%s: %s" % (err.error_code, err.error_message))
 
-        for existing_lb in all_elbs:
-            if existing_lb.name in self.names:
-                elb_array.append(self._get_elb_info(existing_lb))
+        if all_elbs:
+            for existing_lb in all_elbs:
+                if existing_lb.name in self.names:
+                    elb_array.append(self._get_elb_info(existing_lb))
 
         return elb_array
 
